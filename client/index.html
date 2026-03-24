@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpotiFAHH Media Browser</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      :root {
+        --bg: #090a12;
+        --panel: #141726;
+        --panel-soft: #1a1f33;
+        --text: #f1f4ff;
+        --muted: #9da6c3;
+        --accent: #95ffc9;
+        --accent2: #9ec9ff;
+        --danger: #ff9cb6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui;
+        color: var(--text);
+        background: radial-gradient(1000px 600px at 0% -10%, #242841 0%, transparent 40%),
+          radial-gradient(1000px 600px at 100% -20%, #32234b 0%, transparent 40%), var(--bg);
+      }
+      .app { padding: 16px; max-width: 1280px; margin: 0 auto; }
+      .header {
+        position: sticky; top: 0; z-index: 5;
+        background: rgba(9, 10, 18, 0.86);
+        backdrop-filter: blur(8px);
+        border: 1px solid #242946;
+        padding: 10px; border-radius: 16px;
+        display: grid; grid-template-columns: 1fr auto; gap: 10px;
+      }
+      .search {
+        width: 100%; border-radius: 999px; border: 1px solid #30375b; background: #181c2e;
+        color: var(--text); padding: 12px 16px; font-size: 1rem;
+      }
+      .btn {
+        border-radius: 10px; border: 1px solid #333a61; background: #1a2035; color: var(--text);
+        padding: 10px 12px; cursor: pointer; font-weight: 600;
+      }
+      .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #14161f; border: none; }
+      .layout { margin-top: 12px; display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+      .panel { background: linear-gradient(180deg, #131727, #0f1220); border: 1px solid #252a45; border-radius: 16px; padding: 12px; }
+      .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+      .card {
+        background: var(--panel-soft); border: 1px solid #2a3152; border-radius: 12px; overflow: hidden;
+        transition: transform .2s ease, border-color .2s ease; cursor: pointer;
+      }
+      .card:hover { transform: translateY(-2px); border-color: #8ebeff; }
+      .thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #0a0d17; }
+      .meta { padding: 10px; }
+      .title { font-size: .95rem; font-weight: 700; line-height: 1.2; }
+      .sub { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+      .duration { color: #d6ddff; font-size: .8rem; margin-top: 8px; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+      iframe { width: 100%; border: 0; border-radius: 12px; height: 220px; background: #000; }
+      .empty { color: var(--muted); text-align: center; padding: 24px; }
+      .chip { border-radius: 999px; border: 1px solid #36406b; background: #1b2138; color: #d8e2ff; padding: 4px 10px; font-size: .8rem; }
+      .warning { border-left: 3px solid var(--danger); background: #251c2e; color: #ffd8e2; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: .86rem; }
+      @media (max-width: 1060px) {
+        .layout { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 900px) {
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useState, useEffect, useMemo, useRef } = React;
+
+      function useDebounced(value, delay = 500) {
+        const [debounced, setDebounced] = useState(value);
+        useEffect(() => {
+          const t = setTimeout(() => setDebounced(value), delay);
+          return () => clearTimeout(t);
+        }, [value, delay]);
+        return debounced;
+      }
+
+      function App() {
+        const [query, setQuery] = useState('lofi chill');
+        const [allItems, setAllItems] = useState([]);
+        const [visibleCount, setVisibleCount] = useState(12);
+        const [selected, setSelected] = useState(null);
+        const [user, setUser] = useState(null);
+        const [favorites, setFavorites] = useState([]);
+        const [recommendations, setRecommendations] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const sentinelRef = useRef(null);
+        const debouncedQuery = useDebounced(query, 450);
+
+        useEffect(() => {
+          fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'demo_user', email: 'demo@spotifahh.local' })
+          })
+            .then((r) => r.json())
+            .then((u) => setUser(u));
+        }, []);
+
+        useEffect(() => {
+          if (!debouncedQuery.trim()) return;
+          setLoading(true);
+          fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&limit=18`)
+            .then((r) => r.json())
+            .then((data) => {
+              setAllItems(data.items || []);
+              setVisibleCount(12);
+              setSelected((data.items || [])[0] || null);
+            })
+            .finally(() => setLoading(false));
+        }, [debouncedQuery]);
+
+        useEffect(() => {
+          if (!user?._id) return;
+          fetch(`/api/favorites/${user._id}`).then((r) => r.json()).then(setFavorites);
+          fetch(`/api/recommendations/${user._id}`).then((r) => r.json()).then(setRecommendations);
+        }, [user]);
+
+        useEffect(() => {
+          const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+              setVisibleCount((v) => Math.min(v + 8, allItems.length));
+            }
+          }, { rootMargin: '200px' });
+
+          if (sentinelRef.current) observer.observe(sentinelRef.current);
+          return () => observer.disconnect();
+        }, [allItems.length]);
+
+        const visibleItems = useMemo(() => allItems.slice(0, visibleCount), [allItems, visibleCount]);
+
+        async function saveFavorite(item) {
+          if (!user?._id) return;
+          await fetch('/api/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user._id, mediaItem: item })
+          });
+          const updated = await fetch(`/api/favorites/${user._id}`).then((r) => r.json());
+          setFavorites(updated);
+          const recs = await fetch(`/api/recommendations/${user._id}`).then((r) => r.json());
+          setRecommendations(recs);
+        }
+
+        return (
+          <div className="app">
+            <div className="header">
+              <input className="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search music and videos..." />
+              <button className="btn">Live search</button>
+            </div>
+
+            <div className="layout">
+              <div className="panel">
+                <h2>Browse</h2>
+                <div className="row">
+                  <span className="chip">Debounced search</span>
+                  <span className="chip">Infinite scroll</span>
+                  <span className="chip">Lazy images</span>
+                </div>
+                {loading && <p className="sub">Searching official APIs...</p>}
+                {!loading && visibleItems.length === 0 && <div className="empty">No results. Add API keys in `.env` and search again.</div>}
+
+                <div className="grid">
+                  {visibleItems.map((item) => (
+                    <article className="card" key={`${item.platform}-${item.id}`} onClick={() => setSelected(item)}>
+                      <img className="thumb" src={item.thumbnail_url} loading="lazy" alt={item.title} />
+                      <div className="meta">
+                        <div className="title">{item.title}</div>
+                        <div className="sub">{item.creator} • {item.platform}</div>
+                        <div className="duration">Duration: {item.duration}</div>
+                        <div className="row">
+                          <button className="btn primary" onClick={(e) => { e.stopPropagation(); setSelected(item); }}>Play</button>
+                          <button className="btn" onClick={(e) => { e.stopPropagation(); saveFavorite(item); }}>Favorite</button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <div ref={sentinelRef} style={{ height: 10 }} />
+              </div>
+
+              <div className="panel">
+                <h3>Now Playing</h3>
+                {selected ? (
+                  <>
+                    <iframe src={selected.media_url} allow="autoplay; encrypted-media" allowFullScreen title="Embedded player" />
+                    <div className="meta" style={{ padding: '10px 0 0' }}>
+                      <div className="title">{selected.title}</div>
+                      <div className="sub">{selected.creator} • {selected.platform}</div>
+                    </div>
+                  </>
+                ) : <div className="empty">Select a media item to play.</div>}
+
+                <h3>Favorites</h3>
+                {favorites.slice(0, 6).map((f) => <div key={`${f.platform}-${f.id}`} className="sub">• {f.title}</div>)}
+
+                <h3 style={{ marginTop: 16 }}>Recommended for you</h3>
+                {recommendations.slice(0, 8).map((r) => <div key={`${r.platform}-${r.id}`} className="sub">• {r.title} ({r.creator})</div>)}
+
+                <div className="warning">
+                  Metadata + embeds only. No downloading, storing, or conversion of copyrighted media files.
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
