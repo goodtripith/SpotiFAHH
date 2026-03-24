@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pastelify — Dark Pastel Music UI</title>
+  <style>
+    :root {
+      --bg: #09090f;
+      --panel: #11121b;
+      --panel-2: #171a26;
+      --muted: #9fa7c0;
+      --text: #f5f7ff;
+      --accent: #87f5be;
+      --accent-2: #c8a9ff;
+      --accent-3: #8bc4ff;
+      --danger: #ff8aa1;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 700px at 5% -10%, #22243a 0%, transparent 45%),
+                  radial-gradient(900px 600px at 100% -20%, #2a1f3e 0%, transparent 45%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 76px 1fr 92px;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: color-mix(in oklab, var(--panel), #000 25%);
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: conic-gradient(from 180deg, #f5f7ff, #a4b8ff, #b2ffd6, #f5f7ff);
+      position: relative;
+      display: grid;
+      place-items: center;
+      color: #10131e;
+      font-weight: 900;
+    }
+
+    .search {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1d2b;
+      border: 1px solid #272a3d;
+      border-radius: 999px;
+      padding: 10px 16px;
+      min-width: 220px;
+    }
+
+    .search input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .pill {
+      border: 1px solid #30344a;
+      background: #1c2030;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .pill.primary { background: linear-gradient(135deg, #ebecff, #d7ffd6); color: #111; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr 320px;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, #121523, #0f111b);
+      border: 1px solid #22263a;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .library,
+    .right,
+    .main { padding: 16px; }
+
+    .library h2,
+    .main h2,
+    .right h2 { margin: 0 0 14px; }
+
+    .library-list {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+      max-height: calc(100vh - 300px);
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .playlist-item {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: #171a28;
+      border: 1px solid #25293d;
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .cover {
+      width: 52px;
+      height: 52px;
+      border-radius: 9px;
+      background: linear-gradient(140deg, var(--accent-2), var(--accent-3));
+      display: grid;
+      place-items: center;
+      color: #0b0e16;
+      font-weight: 800;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: .88rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+    }
+
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #181b2b;
+      border: 1px solid #282d42;
+      border-radius: 14px;
+      padding: 10px;
+      transition: transform .2s ease;
+      cursor: pointer;
+    }
+    .card:hover { transform: translateY(-2px); }
+
+    .card-art {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #f59ec6, #85c3ff 45%, #bafcc9);
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .badge {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: .75rem;
+    }
+
+    .right .now {
+      border-radius: 14px;
+      background: linear-gradient(170deg, #22253a, #15182a);
+      border: 1px solid #313654;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .right iframe {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      min-height: 170px;
+      background: #000;
+    }
+
+    .url-add {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .url-add input {
+      background: #171a28;
+      border: 1px solid #30364d;
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px;
+      outline: none;
+    }
+
+    .player {
+      border-radius: var(--radius);
+      background: #0f111a;
+      border: 1px solid #262b40;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .track-meta { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .track-meta .cover { width: 48px; height: 48px; }
+
+    .center-controls {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+    }
+
+    .buttons { display: flex; gap: 10px; align-items: center; }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #1c2131;
+      border: 1px solid #2f3550;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .icon-btn.play {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(145deg, #d8ffe7, #b5d5ff);
+      color: #111;
+      border: none;
+      font-weight: 800;
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 360px;
+      height: 4px;
+      border-radius: 99px;
+      background: #2a3047;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      width: 37%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-3));
+    }
+
+    .notice {
+      margin-top: 12px;
+      border-left: 3px solid var(--danger);
+      background: #211824;
+      color: #ffdbe4;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: .86rem;
+    }
+
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: 270px 1fr; }
+      .right { display: none; }
+      .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 920px) {
+      body { grid-template-rows: auto 1fr auto; }
+      .layout { grid-template-columns: 1fr; }
+      .library { display: none; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .player { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top panel">
+    <div class="logo" title="Pastelify">♪</div>
+    <div class="search">
+      🔎
+      <input type="text" placeholder="What do you want to play?" />
+      ⬛
+    </div>
+    <button class="pill primary">Explore Premium</button>
+    <button class="pill">Install App</button>
+  </header>
+
+  <section class="layout">
+    <aside class="panel library">
+      <h2>Your Library</h2>
+      <div class="tabs">
+        <button class="pill">Playlists</button>
+        <button class="pill">Artists</button>
+        <button class="pill">Albums</button>
+      </div>
+      <div class="library-list" id="libraryList"></div>
+    </aside>
+
+    <main class="panel main">
+      <div class="tabs">
+        <button class="pill primary">All</button>
+        <button class="pill">Music</button>
+        <button class="pill">Podcasts</button>
+        <button class="pill">Audiobooks</button>
+      </div>
+
+      <section>
+        <h2>Made for you</h2>
+        <div class="cards" id="mixCards"></div>
+      </section>
+
+      <section>
+        <h2>Your top mixes</h2>
+        <div class="cards" id="topCards"></div>
+      </section>
+    </main>
+
+    <aside class="panel right">
+      <h2>Now Playing</h2>
+      <div class="now">
+        <strong id="npTitle">Night Drive Mix</strong>
+        <span class="tiny" id="npArtist">Lo-fi Collective</span>
+        <iframe id="embed" src="https://www.youtube.com/embed/jfKfPfyJRdk" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+
+      <div class="url-add">
+        <input id="urlInput" placeholder="Paste YouTube or SoundCloud URL" />
+        <button class="pill primary" id="addBtn">Add</button>
+      </div>
+      <div class="notice">
+        This demo supports legal streaming embeds only. It intentionally does not auto-download or convert tracks from external platforms.
+      </div>
+    </aside>
+  </section>
+
+  <footer class="player">
+    <div class="track-meta">
+      <div class="cover">♪</div>
+      <div style="min-width:0;">
+        <div id="footerTitle">Night Drive Mix</div>
+        <div class="tiny" id="footerArtist">Lo-fi Collective</div>
+      </div>
+    </div>
+
+    <div class="center-controls">
+      <div class="buttons">
+        <button class="icon-btn">⤮</button>
+        <button class="icon-btn">⏮</button>
+        <button class="icon-btn play" id="playBtn">▶</button>
+        <button class="icon-btn">⏭</button>
+        <button class="icon-btn">↻</button>
+      </div>
+      <div class="bar"><span></span></div>
+    </div>
+
+    <div class="tiny" style="justify-self:end;">Dark Pastel UI Concept • One-file build</div>
+  </footer>
+
+  <script>
+    const librarySeed = [
+      ["Liked Songs", "Playlist • 150 songs"],
+      ["Your Episodes", "Saved & downloaded"],
+      ["sigh x2", "Playlist • JJ"],
+      ["Your Top Songs 2025", "Made for you"],
+      ["Warm Haze", "Playlist • Chillhop"]
+    ];
+
+    const mixSeed = [
+      ["Discover Weekly", "Your shortcut to hidden gems"],
+      ["Daily Mix 1", "Calein, SunKissed, Unique"],
+      ["Daily Mix 2", "Leslie Odom Jr., Ari Afs"],
+      ["Daily Mix 3", "beabadoobee, The Marías"]
+    ];
+
+    const topSeed = [
+      ["After Hours", "Synthwave / Nightpop"],
+      ["Pastel Noir", "Trip-hop / Downtempo"],
+      ["Cloudline", "Indie / Dream Pop"],
+      ["City Lights", "Electro / Chill"]
+    ];
+
+    const lib = document.getElementById("libraryList");
+    const mkItem = ([title, sub], i) => {
+      const row = document.createElement("article");
+      row.className = "playlist-item";
+      row.innerHTML = `
+        <div class="cover">${title.charAt(0)}</div>
+        <div>
+          <div>${title}</div>
+          <div class="tiny">${sub}</div>
+        </div>
+        <button class="icon-btn" title="Favorite" data-favorite="${title}">♡</button>
+      `;
+      return row;
+    };
+    librarySeed.forEach((it, i) => lib.appendChild(mkItem(it, i)));
+
+    const fillCards = (rootId, rows) => {
+      const root = document.getElementById(rootId);
+      rows.forEach(([title, sub], idx) => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-art" style="background:linear-gradient(145deg, hsl(${240 + idx * 20} 84% 75%), hsl(${330 - idx * 18} 78% 74%), hsl(${180 + idx * 16} 72% 70%));">
+            <span class="badge">Mix</span>
+          </div>
+          <strong>${title}</strong>
+          <div class="tiny">${sub}</div>
+        `;
+        root.appendChild(card);
+      });
+    };
+
+    fillCards("mixCards", mixSeed);
+    fillCards("topCards", topSeed);
+
+    const embed = document.getElementById("embed");
+    const urlInput = document.getElementById("urlInput");
+    const addBtn = document.getElementById("addBtn");
+    const npTitle = document.getElementById("npTitle");
+    const npArtist = document.getElementById("npArtist");
+    const footerTitle = document.getElementById("footerTitle");
+    const footerArtist = document.getElementById("footerArtist");
+
+    function youtubeEmbed(url) {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([A-Za-z0-9_-]{6,})/);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+    }
+
+    function soundcloudEmbed(url) {
+      try {
+        const u = new URL(url);
+        if (!u.hostname.includes("soundcloud.com")) return null;
+        return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
+      } catch {
+        return null;
+      }
+    }
+
+    addBtn.addEventListener("click", () => {
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      const yt = youtubeEmbed(url);
+      const sc = soundcloudEmbed(url);
+
+      if (!yt && !sc) {
+        alert("Please add a valid YouTube or SoundCloud URL.");
+        return;
+      }
+
+      embed.src = yt || sc;
+      const title = yt ? "YouTube Stream" : "SoundCloud Stream";
+      npTitle.textContent = title;
+      npArtist.textContent = "External source";
+      footerTitle.textContent = title;
+      footerArtist.textContent = "Streaming only";
+      urlInput.value = "";
+    });
+
+    document.getElementById("playBtn").addEventListener("click", (e) => {
+      e.currentTarget.textContent = e.currentTarget.textContent === "▶" ? "⏸" : "▶";
+    });
+  </script>
+</body>
+</html>
